@@ -4,9 +4,9 @@ import streamlit as st
 import numpy as np
 from datetime import datetime, time, timedelta
 
-st.set_page_config(page_title="Workflow Analysis", layout="wide")
+st.set_page_config(page_title="Workflow Analysis Hartac Hector Morales", layout="wide")
 
-st.title("Workflow Analysis Dashboard")
+st.title("Workflow Analysis Dashboard - Dev: HM")
 
 # Sidebar menu
 option = st.sidebar.radio(
@@ -222,3 +222,4 @@ elif option == "Work Order Workflow":
             ax.bar_label(container, fmt='%.2f')
 
         st.pyplot(fig)
+
