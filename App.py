@@ -150,7 +150,11 @@ if option == "Sales Order Workflow":
         plt.tight_layout()
 
         for container in ax.containers:
-            ax.bar_label(container, fmt='%.2f')
+            ax.bar_label(container,
+                         fmt='%.2f',
+                        rotation=90,      # <- vertical text
+                        padding=2,        # space from the bar
+                        fontsize=8 )
 
         st.pyplot(fig)
 
@@ -223,5 +227,6 @@ elif option == "Work Order Workflow":
             ax.bar_label(container, fmt='%.2f')
 
         st.pyplot(fig)
+
 
 
