@@ -124,6 +124,7 @@ if option == "Sales Order Workflow":
         filtered_df['Year-Month'] = filtered_df['Date'].dt.to_period('M').astype(str)
         filtered_df = filtered_df[
             (filtered_df['Starting'] != 'Reviewed by Purchasing') &
+            (filtered_df['Starting'] != 'Quote Sent') &
             (filtered_df['Year-Month'] != '2025-03')
         ]
 
@@ -222,4 +223,5 @@ elif option == "Work Order Workflow":
             ax.bar_label(container, fmt='%.2f')
 
         st.pyplot(fig)
+
 
