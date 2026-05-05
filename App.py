@@ -6,7 +6,7 @@ from datetime import datetime, time, timedelta
 
 st.set_page_config(page_title="Workflow Analysis Hartac Hector Morales", layout="wide")
 
-st.title("Workflow Analysis Dashboard - Dev: HM")
+st.title("Workflow Analysis Dashboard - Dev: Hector M")
 
 # Sidebar menu
 option = st.sidebar.radio(
@@ -42,7 +42,7 @@ if option == "Sales Order Workflow":
         documents_to_delete = []
         for doc_list in multiple_different_detail:
             documents_to_delete.extend(doc_list[1:])
-        df_cleaned = df[~df['Document Number'].isin(documents_to_delete)]
+        df_cleaned = df.loc[~df['Document Number'].isin(documents_to_delete)].copy()
 
         # Replace Document Number with Created From
         df_cleaned.loc[df_cleaned['Created From'].notna(), 'Document Number'] = df_cleaned.loc[df_cleaned['Created From'].notna(), 'Created From']
@@ -57,7 +57,7 @@ if option == "Sales Order Workflow":
         # Remove weekends
         df_cleaned['is_weekend'] = df_cleaned['Date'].dt.weekday >= 5
         weekend_docs = df_cleaned[df_cleaned['is_weekend']]['Document Number'].unique()
-        df_cleaned = df_cleaned[~df_cleaned['Document Number'].isin(weekend_docs)]
+        df_cleaned = df_cleaned.loc[~df_cleaned['Document Number'].isin(weekend_docs)].copy()
         df_cleaned.drop(['is_weekend'], axis=1, inplace=True)
 
         # Remove outside working hours
@@ -69,7 +69,7 @@ if option == "Sales Order Workflow":
             ((df_cleaned['hour'] == 6) & (df_cleaned['minute'] < 30))
         ]
         outside_docs = outside_hours['Document Number'].unique()
-        df_cleaned = df_cleaned[~df_cleaned['Document Number'].isin(outside_docs)]
+        df_cleaned = df_cleaned.loc[~df_cleaned['Document Number'].isin(outside_docs)].copy()
         df_cleaned.drop(['hour', 'minute'], axis=1, inplace=True)
 
         # Functions for business hours calculation
@@ -102,7 +102,14 @@ if option == "Sales Order Workflow":
 
         def calculate_status_durations(df):
             df = df.copy()
-            df['Status_Duration_Hours'] = pd.NaT
+
+            # IMPORTANT:
+            # This column must be numeric from the beginning.
+            # Using pd.NaT makes pandas treat it like a datetime/timedelta-style column,
+            # which can fail when assigning float hour values in newer pandas versions.
+            df['Status_Duration_Hours'] = np.nan
+            df['Status_Duration_Hours'] = df['Status_Duration_Hours'].astype('float64')
+
             for doc_num, group in df.groupby('Document Number'):
                 group = group.sort_values('Date', ascending=False)
                 for i in range(len(group) - 1):
@@ -112,21 +119,21 @@ if option == "Sales Order Workflow":
                     end_time = group.loc[current_row_idx, 'Date']
                     duration = calculate_business_hours_duration(start_time, end_time)
                     if not pd.isna(duration):
-                        df.loc[next_row_idx, 'Status_Duration_Hours'] = duration.total_seconds() / 3600
+                        df.at[next_row_idx, 'Status_Duration_Hours'] = duration.total_seconds() / 3600
             return df
 
         # Apply durations
         df_with_durations = calculate_status_durations(df_cleaned)
-        filtered_df = df_with_durations[df_with_durations['Status_Duration_Hours'].notna()]
+        filtered_df = df_with_durations.loc[df_with_durations['Status_Duration_Hours'].notna()].copy()
         filtered_df['Status_Duration_Hours'] = pd.to_numeric(filtered_df['Status_Duration_Hours'], errors='coerce')
 
         # Add Year-Month and filter
         filtered_df['Year-Month'] = filtered_df['Date'].dt.to_period('M').astype(str)
-        filtered_df = filtered_df[
+        filtered_df = filtered_df.loc[
             (filtered_df['Starting'] != 'Reviewed by Purchasing') &
             (filtered_df['Starting'] != 'Quote Sent') &
             (filtered_df['Year-Month'] != '2025-03')
-        ]
+        ].copy()
 
         # Pivot
         result = (
@@ -179,7 +186,7 @@ elif option == "Work Order Workflow":
         df['Date'] = pd.to_datetime(df['Date'], format='%d/%m/%Y')
         df['End Date'] = pd.to_datetime(df['End Date'], format='%d/%m/%Y')
         df['Date.1'] = pd.to_datetime(df['Date.1'], dayfirst=True).dt.normalize()
-        df = df[df['Stage Number'] == 'Finishing']
+        df = df.loc[df['Stage Number'] == 'Finishing'].copy()
 
         df['Days from Printed to Due date'] = np.busday_count(
             df['End Date'].values.astype('datetime64[D]'),
