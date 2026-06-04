@@ -210,18 +210,27 @@ if option == "Sales Order Workflow":
             st.warning("No valid Sales Order workflow records found after filtering.")
         else:
             # -------------------
-            # Transactions over 3 hours per status
+            # Latest month transactions over 3 hours per status
             # -------------------
             threshold_hours = 3
 
-            over_threshold_df = filtered_df.loc[
-                filtered_df["Status_Duration_Hours"] > threshold_hours
+            latest_month = filtered_df["Year-Month"].max()
+
+            latest_month_df = filtered_df.loc[
+                filtered_df["Year-Month"] == latest_month
             ].copy()
 
-            st.subheader("Sales Orders Over 3 Hours by Status")
+            over_threshold_df = latest_month_df.loc[
+                latest_month_df["Status_Duration_Hours"] > threshold_hours
+            ].copy()
+
+            st.subheader(f"Sales Orders Over {threshold_hours} Hours by Status - Latest Month ({latest_month})")
 
             if over_threshold_df.empty:
-                st.success("No Sales Order status tasks exceeded 2 business hours.")
+                st.success(
+                    f"No Sales Order status tasks exceeded {threshold_hours} business hours "
+                    f"in the latest month: {latest_month}."
+                )
             else:
                 over_threshold_df["Status_Duration_Hours"] = over_threshold_df[
                     "Status_Duration_Hours"
@@ -261,7 +270,7 @@ if option == "Sales Order Workflow":
                     hide_index=True
                 )
 
-                with st.expander("Show transaction-level detail over 3 hours"):
+                with st.expander(f"Show transaction-level detail over {threshold_hours} hours for {latest_month}"):
                     detail_over_threshold = over_threshold_df[
                         [
                             "Document Number",
