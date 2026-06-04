@@ -209,7 +209,91 @@ if option == "Sales Order Workflow":
         if filtered_df.empty:
             st.warning("No valid Sales Order workflow records found after filtering.")
         else:
+            # -------------------
+            # Transactions over 1.5 hours per status
+            # -------------------
+            threshold_hours = 1.5
+
+            over_threshold_df = filtered_df.loc[
+                filtered_df["Status_Duration_Hours"] > threshold_hours
+            ].copy()
+
+            st.subheader("Sales Orders Over 1.5 Hours by Status")
+
+            if over_threshold_df.empty:
+                st.success("No Sales Order status tasks exceeded 1.5 business hours.")
+            else:
+                over_threshold_df["Status_Duration_Hours"] = over_threshold_df[
+                    "Status_Duration_Hours"
+                ].round(2)
+
+                summary_over_threshold = (
+                    over_threshold_df
+                    .groupby("Starting")
+                    .agg(
+                        Transactions_Over_1_5h=("Document Number", "nunique"),
+                        Transaction_Numbers=(
+                            "Document Number",
+                            lambda x: ", ".join(sorted(x.astype(str).unique()))
+                        ),
+                        Average_Hours=("Status_Duration_Hours", "mean"),
+                        Max_Hours=("Status_Duration_Hours", "max")
+                    )
+                    .reset_index()
+                    .rename(
+                        columns={
+                            "Starting": "Status"
+                        }
+                    )
+                )
+
+                summary_over_threshold["Average_Hours"] = summary_over_threshold[
+                    "Average_Hours"
+                ].round(2)
+
+                summary_over_threshold["Max_Hours"] = summary_over_threshold[
+                    "Max_Hours"
+                ].round(2)
+
+                st.dataframe(
+                    summary_over_threshold,
+                    use_container_width=True,
+                    hide_index=True
+                )
+
+                with st.expander("Show transaction-level detail over 1.5 hours"):
+                    detail_over_threshold = over_threshold_df[
+                        [
+                            "Document Number",
+                            "Starting",
+                            "Finishing",
+                            "Date",
+                            "Status_Duration_Hours",
+                            "Year-Month"
+                        ]
+                    ].sort_values(
+                        by=["Starting", "Status_Duration_Hours"],
+                        ascending=[True, False]
+                    )
+
+                    detail_over_threshold = detail_over_threshold.rename(
+                        columns={
+                            "Document Number": "Transaction Number",
+                            "Starting": "Status",
+                            "Finishing": "Next Status",
+                            "Status_Duration_Hours": "Duration Hours"
+                        }
+                    )
+
+                    st.dataframe(
+                        detail_over_threshold,
+                        use_container_width=True,
+                        hide_index=True
+                    )
+
+            # -------------------
             # Pivot
+            # -------------------
             result = (
                 filtered_df
                 .groupby(["Year-Month", "Starting"])["Status_Duration_Hours"]
