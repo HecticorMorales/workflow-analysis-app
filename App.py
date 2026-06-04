@@ -210,15 +210,15 @@ if option == "Sales Order Workflow":
             st.warning("No valid Sales Order workflow records found after filtering.")
         else:
             # -------------------
-            # Transactions over 2 hours per status
+            # Transactions over 3 hours per status
             # -------------------
-            threshold_hours = 2
+            threshold_hours = 3
 
             over_threshold_df = filtered_df.loc[
                 filtered_df["Status_Duration_Hours"] > threshold_hours
             ].copy()
 
-            st.subheader("Sales Orders Over 2 Hours by Status")
+            st.subheader("Sales Orders Over 3 Hours by Status")
 
             if over_threshold_df.empty:
                 st.success("No Sales Order status tasks exceeded 2 business hours.")
@@ -231,7 +231,7 @@ if option == "Sales Order Workflow":
                     over_threshold_df
                     .groupby("Starting")
                     .agg(
-                        Transactions_Over_1_5h=("Document Number", "nunique"),
+                        Transactions_Over_3h=("Document Number", "nunique"),
                         Transaction_Numbers=(
                             "Document Number",
                             lambda x: ", ".join(sorted(x.astype(str).unique()))
@@ -261,7 +261,7 @@ if option == "Sales Order Workflow":
                     hide_index=True
                 )
 
-                with st.expander("Show transaction-level detail over 1.5 hours"):
+                with st.expander("Show transaction-level detail over 3 hours"):
                     detail_over_threshold = over_threshold_df[
                         [
                             "Document Number",
